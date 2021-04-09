@@ -10,10 +10,12 @@ logging.basicConfig(level=logging.INFO)
 
 sessionStorage = {}
 
+
 @app.route('/')
 @app.route('/index')
 def index():
     return "Hello!"
+
 
 @app.route('/post', methods=['POST'])
 def main():
@@ -36,7 +38,6 @@ def handle_dialog(req, res):
     user_id = req['session']['user_id']
 
     if req['session']['new']:
-
         sessionStorage[user_id] = {
             'suggests': [
                 {'title': "Да", 'hide': True},
@@ -49,17 +50,16 @@ def handle_dialog(req, res):
 
     response = requests.get('https://deckofcardsapi.com/api/deck/new/shuffle/').json()
     res['response']['text'] = str(response)
-    return
 
-#     if req['request']['original_utterance'].lower() in [
-#         'ладно',
-#         'куплю',
-#         'покупаю',
-#         'хорошо'
-#     ]:
-#         res['response']['text'] = 'Слона можно найти на Яндекс.Маркете!'
-#         res['response']['end_session'] = True
-#         return
+    if req['request']['original_utterance'].lower() in [
+        'ладно',
+        'куплю',
+        'покупаю',
+        'хорошо'
+    ]:
+        res['response']['text'] = 'Слона можно найти на Яндекс.Маркете!'
+        res['response']['end_session'] = True
+        return
 
 
 if __name__ == "__main__":
