@@ -54,11 +54,43 @@ def handle_dialog(req, res):
         'я покупаю'
     ]:
         res['response']['text'] = 'Слона можно найти на Яндекс.Маркете!'
-        res['response']['end_session'] = True
+        function_habbit(req, res)
         return
 
     res['response']['text'] = \
         f"Все говорят '{req['request']['original_utterance']}', а ты купи слона!"
+    res['response']['buttons'] = get_suggests(user_id)
+
+
+def function_habbit(req, res):
+    user_id = req['session']['user_id']
+
+    if req['session']['new']:
+        sessionStorage[user_id] = {
+            'suggests': [
+                "Не хочу.",
+                "Не буду.",
+                "Отстань!",
+            ]
+        }
+        res['response']['text'] = 'А теперь купи кролика!'
+        res['response']['buttons'] = get_suggests(user_id)
+        return
+
+    if req['request']['original_utterance'].lower() in [
+        'ладно',
+        'куплю',
+        'покупаю',
+        'хорошо',
+        'я куплю',
+        'я покупаю'
+    ]:
+        res['response']['text'] = 'Кролика можно найти на Яндекс.Маркете!'
+        res['response']['end_session'] = True
+        return
+
+    res['response']['text'] = \
+        f"Все говорят '{req['request']['original_utterance']}', а ты купи кролика!"
     res['response']['buttons'] = get_suggests(user_id)
 
 
@@ -76,7 +108,7 @@ def get_suggests(user_id):
     if len(suggests) < 2:
         suggests.append({
             "title": "Ладно",
-            "url": "https://market.yandex.ru/search?text=слон",
+            "url": "https://market.yandex.ru/search?text=кролик",
             "hide": True
         })
 
