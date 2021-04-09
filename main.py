@@ -55,7 +55,6 @@ def handle_dialog(req, res):
     ]:
         res['response']['text'] = 'Слона можно найти на Яндекс.Маркете!'
         function_habbit(req, res)
-        return
 
     res['response']['text'] = \
         f"Все говорят '{req['request']['original_utterance']}', а ты купи слона!"
