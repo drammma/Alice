@@ -50,6 +50,8 @@ def handle_dialog(req, res):
         'куплю',
         'покупаю',
         'хорошо',
+        'я куплю',
+        'я покупаю'
     ]:
         res['response']['text'] = 'Слона можно найти на Яндекс.Маркете!'
         res['response']['end_session'] = True
@@ -74,16 +76,6 @@ def get_suggests(user_id):
     if len(suggests) < 2:
         suggests.append({
             "title": "Ладно",
-            "url": "https://market.yandex.ru/search?text=слон",
-            "hide": True
-        })
-        suggests.append({
-            "title": "Я куплю",
-            "url": "https://market.yandex.ru/search?text=слон",
-            "hide": True
-        })
-        suggests.append({
-            "title": "Я покупаю",
             "url": "https://market.yandex.ru/search?text=слон",
             "hide": True
         })
