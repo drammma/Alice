@@ -55,8 +55,6 @@ def handle_dialog(req, res):
     ]:
         res['response']['text'] = 'Слона можно найти на Яндекс.Маркете!'
         rabbit_handle(req, res)
-        res['response']['end_session'] = True
-        return
 
     res['response']['text'] = \
         f"Все говорят '{req['request']['original_utterance']}', а ты купи слона!"
@@ -86,7 +84,7 @@ def rabbit_handle(req, res):
         'я покупаю'
     ]:
         res['response']['text'] = 'Кролика можно найти на Яндекс.Маркете!'
-        # res['response']['end_session'] = True
+        res['response']['end_session'] = True
         return
 
     res['response']['text'] = \
