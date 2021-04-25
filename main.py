@@ -54,6 +54,7 @@ def handle_dialog(req, res):
         'я покупаю'
     ]:
         res['response']['text'] = 'Слона можно найти на Яндекс.Маркете!'
+        rabbit_handle(req, res)
         res['response']['end_session'] = True
         return
 
@@ -61,8 +62,7 @@ def handle_dialog(req, res):
         f"Все говорят '{req['request']['original_utterance']}', а ты купи слона!"
     res['response']['buttons'] = get_suggests(user_id)
 
-
-def function_habbit(req, res):
+def rabbit_handle(req, res):
     user_id = req['session']['user_id']
 
     if req['session']['new']:
@@ -86,7 +86,7 @@ def function_habbit(req, res):
         'я покупаю'
     ]:
         res['response']['text'] = 'Кролика можно найти на Яндекс.Маркете!'
-        res['response']['end_session'] = True
+        # res['response']['end_session'] = True
         return
 
     res['response']['text'] = \
@@ -96,7 +96,6 @@ def function_habbit(req, res):
 
 def get_suggests(user_id):
     session = sessionStorage[user_id]
-
     suggests = [
         {'title': suggest, 'hide': True}
         for suggest in session['suggests'][:2]
@@ -108,7 +107,7 @@ def get_suggests(user_id):
     if len(suggests) < 2:
         suggests.append({
             "title": "Ладно",
-            "url": "https://market.yandex.ru/search?text=кролик",
+            "url": "https://market.yandex.ru/search?text=слон",
             "hide": True
         })
 
