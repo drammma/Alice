@@ -1,109 +1,90 @@
-# импортируем библиотеки
+from flask import Flask, request
 import logging
 import json
-import os
-
-from flask import Flask, request
+import random
 
 app = Flask(__name__)
 
-# Устанавливаем уровень логирования
 logging.basicConfig(level=logging.INFO)
+
+cities = {
+    'москва': ['1540737/daa6e420d33102bf6947',
+               '213044/7df73ae4cc715175059e'],
+    'нью-йорк': ['1652229/728d5c86707054d4745f',
+                 '1030494/aca7ed7acefde2606bdc'],
+    'париж': ["1652229/f77136c2364eb90a3ea8",
+              '3450494/aca7ed7acefde22341bdc']
+}
 
 sessionStorage = {}
 
 
-@app.route('/')
-@app.route('/index')
-def index():
-    return "Hello!"
-
-
-animals = ['слон', 'кролик']
-
-
-@app.route("/post", methods=["POST"])
+@app.route('/post', methods=['POST'])
 def main():
-    logging.info(f"Request: {request.json}")
+    logging.info(f'Request: {request.json!r}')
     response = {
-        "session": request.json["session"],
-        "version": request.json["version"],
-        "response": {"end_session": False},
+        'session': request.json['session'],
+        'version': request.json['version'],
+        'response': {
+            'end_session': False
+        }
     }
-    # Отправляем request.json и response в функцию handle_dialog.
-    # Она сформирует оставшиеся поля JSON, которые отвечают
-    # непосредственно за ведение диалога
-    handle_dialog(request.json, response)
-    logging.info(f"Response: {response}")
+    handle_dialog(response, request.json)
+    logging.info(f'Response: {response!r}')
     return json.dumps(response)
 
 
-def handle_dialog(req, res):
-    user_id = req["session"]["user_id"]
-    if req["session"]["new"]:
+def handle_dialog(res, req):
+    user_id = req['session']['user_id']
+
+    if req['session']['new']:
+        res['response']['text'] = 'Привет! Назови свое имя!'
         sessionStorage[user_id] = {
-            "suggests": [
-                "Не хочу.",
-                "Не буду.",
-                "Отстань!",
-            ],
-            "step": 0,
+            'first_name': None
         }
-        res["response"]["text"] = f"Привет! Купи {animals[0]}а! "
-        res["response"]["buttons"] = get_suggests(user_id)
         return
 
-
-    # Сюда дойдем только, если пользователь не новый,
-    # и разговор с Алисой уже был начат
-    # Обрабатываем ответ пользователя.
-    # В req['request']['original_utterance'] лежит весь текст,
-    # что нам прислал пользователь
-    # Если он написал 'ладно', 'куплю', 'покупаю', 'хорошо',
-    # то мы считаем, что пользователь согласился.
-    # Подумайте, всё ли в этом фрагменте написано "красиво"?
-    if req['request']['original_utterance'].lower() in [
-        'ладно',
-        'куплю',
-        'покупаю',
-        'хорошо'] or 'куп' in req['request']['original_utterance'].lower():
-        # Пользователь согласился, прощаемся.
-        step = sessionStorage[user_id]["step"]
-        res["response"]["text"] = f"{animals[step]}а можно найти на Яндекс.Маркете!"
-        if step:
-            res["response"]["end_session"] = True
+    if sessionStorage[user_id]['first_name'] is None:
+        first_name = get_first_name(req)
+        if first_name is None:
+            res['response']['text'] = \
+                'Не расслышала имя. Повтори, пожалуйста!'
         else:
-            sessionStorage[user_id]["step"] += 1
-            res["response"]["text"] += "\nА теперь купи кролика!"
-        return
-    step = sessionStorage[user_id]["step"]
-    res["response"][
-        "text"
-    ] = f"Все говорят '{req['request']['original_utterance']}', а ты купи {animals[step]}а!"
-    res["response"]["buttons"] = get_suggests(user_id)
+            sessionStorage[user_id]['first_name'] = first_name
+            res['response'][
+                'text'] = 'Приятно познакомиться, ' \
+                          + first_name.title() \
+                          + '. Я - Алиса. Какой город хочешь увидеть?'
+            res['response']['buttons'] = [
+                {
+                    'title': city.title(),
+                    'hide': True
+                } for city in cities
+            ]
+    else:
+        city = get_city(req)
+        if city in cities:
+            res['response']['card'] = {}
+            res['response']['card']['type'] = 'BigImage'
+            res['response']['card']['title'] = 'Этот город я знаю.'
+            res['response']['card']['image_id'] = random.choice(cities[city])
+            res['response']['text'] = 'Я угадал!'
+        else:
+            res['response']['text'] = \
+                'Первый раз слышу об этом городе. Попробуй еще разок!'
 
 
-# Функция возвращает две подсказки для ответа.
-def get_suggests(user_id):
-    session = sessionStorage[user_id]
-    suggests = [{"title": suggest, "hide": True} for suggest in session["suggests"][:2]]
-    session["suggests"] = session["suggests"][1:]
-    sessionStorage[user_id] = session
+def get_city(req):
+    for entity in req['request']['nlu']['entities']:
+        if entity['type'] == 'YANDEX.GEO':
+            return entity['value'].get('city', None)
 
-    # Если осталась только одна подсказка, предлагаем подсказку
-    # со ссылкой на Яндекс.Маркет.
-    if len(suggests) < 2:
-        suggests.append(
-            {
-                "title": "Ладно",
-                "url": f"https://market.yandex.ru/search?text={animals[session['step']]}",
-                "hide": True,
-            }
-        )
 
-    return suggests
+def get_first_name(req):
+    for entity in req['request']['nlu']['entities']:
+        if entity['type'] == 'YANDEX.FIO':
+            return entity['value'].get('first_name', None)
 
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run()
